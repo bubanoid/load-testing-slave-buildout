@@ -8,22 +8,22 @@ eggs +=
     urllib3
 
 [circus.ini]
-master = {{ master }}
-slave = {{ slave }}
-slaves_count = {{ slaves_count}}
-master-web-port = {{ master_web_port }}
+master =
+slave = True
+slaves_count = 2
+master-web-port = 40000
 master-bind-host = "*"
-master-bind-port = {{ master_port }}
-master-host = {{ master_host }}
-master-port = {{ master_port }}
-locustfile = {{ locustfile }}
-class = {{ class }}
+master-bind-port = 41000
+master-host = 192.168.6.31
+master-port = 41000
+locustfile = insider-load.py
+class = DSDEVUser
 
 [load.py]
-auctions_count = {{ auctions_count }}
-signature_key = {{ signature_key }}
-host = {{ target_host }}
-input = ${buildout:directory}/templates/{{ input_file }}
+auctions_count = 2
+signature_key = fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1
+host = http://192.168.6.1:8090
+input = ${buildout:directory}/templates/authorized_insider.py
 
 [versions]
 #pyzmq = 16.0.2
