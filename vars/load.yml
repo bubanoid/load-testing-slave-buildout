@@ -16,3 +16,20 @@ __uploadsize: 1000000
 __uploadhost: "https://upload-docs-dev.prozorro.gov.ua"
 __username: broker
 __password: broker
+
+
+user_name: loaduser
+buildout_repository_path: https://github.com/openprocurement/load-testing-slave.git
+buildout_path: buildout
+buildout_repository_version: master
+master: ""
+slave: True
+slaves_count: 2
+master_web_port: 40000
+master_host: 192.168.6.31
+master_port: 41000
+input_file: "authorized_insider.py"
+locustfile: "insider-load.py"
+target_host: "http://192.168.6.1:8090"
+signature_key: "fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1"
+auctions_count: 2

@@ -100,7 +100,6 @@ class AuctionTest(TaskSet):
             self.last_change = json.loads(resp.content)['last_seq']
 
 
-
 class AuctionAnonymous(HttpLocust):
     host = "${options['host']}"
     min_wait = 0
