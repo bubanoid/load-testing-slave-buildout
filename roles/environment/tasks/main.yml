@@ -1,0 +1,25 @@
+---
+- name: Install additional packages
+  dnf: name={{ item }} state=present
+  with_items: "{{ packages }}"
+  become: yes
+
+- name: Add user
+  become: yes
+  user: name={{ user_name }} shell=/bin/bash  createhome=yes home=/home/{{ user_name }} state=present
+
+- name: Set limits in /etc/security/limits.conf
+  become: yes
+  blockinfile:
+    dest: /etc/security/limits.conf
+    block: |
+      @{{ user_name }} soft nofile 60000
+      @{{ user_name }} hard nofile 60000
+    insertafter: EOF
+    state: present
+
+- block:
+  - include: buildout.yml
+  become: yes
+  become_user: "{{ user_name }}"
+  tags: ['buildout']
