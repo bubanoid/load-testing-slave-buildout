@@ -11,11 +11,7 @@ eggs +=
 master =
 slave = True
 slaves_count = 2
-master-web-port = 40000
-master-bind-host = "*"
-master-bind-port = 41000
 master-host = 192.168.6.31
-master-port = 41000
 locustfile = insider-load.py
 class = DSDEVUser
 
