@@ -13,15 +13,28 @@ from pyquery import PyQuery
 from base64 import b64encode
 from libnacl.sign import Signer
 from urllib import quote
+import os, io
+from configparser import RawConfigParser
 
+with open('../etc/locust.cfg', 'r') as f:
+    sample_config = f.read()
+config = RawConfigParser(allow_no_value=True)
+config.read_file(io.BytesIO(sample_config))
 
-AUCTIONS_COUNT = int("${options['auctions_count']}")
+section = os.path.basename(__file__)
+PARAMS = {}
+
+for option in config.options(section):
+    PARAMS[option] = config.get(section, option)
+
+AUCTIONS_COUNT = int(PARAMS['auctions_count'])
+
 BIDDERS = [
     "e4456d02263441ffb3f00ceafa661bb2",
     "a96a4681a1ef4b9fba6b598bd1d39406",
     "c26d9eed99624c338ce0fca58a0aac32"
 ]
-SIGNATURE_KEY = "${options['signature_key']}"
+SIGNATURE_KEY = PARAMS['signature_key']
 
 
 class AuctionInsiderAuthorizedTest(TaskSet):
@@ -231,7 +244,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
 
 class AuctionAuthorized(HttpLocust):
-    host = "${options['host']}"
+    host = PARAMS['host']
     min_wait = 0
     max_wait = 0
     task_set = AuctionInsiderAuthorizedTest

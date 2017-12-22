@@ -7,9 +7,21 @@ from datetime import datetime
 from time import mktime
 from locust import HttpLocust, TaskSet, task
 from pyquery import PyQuery
+import os, io
+from configparser import RawConfigParser
 
+with open('../etc/locust.cfg', 'r') as f:
+    sample_config = f.read()
+config = RawConfigParser(allow_no_value=True)
+config.read_file(io.BytesIO(sample_config))
 
-AUCTIONS_COUNT = int("${options['auctions_count']}")
+section = os.path.basename(__file__)
+PARAMS = {}
+
+for option in config.options(section):
+    PARAMS[option] = config.get(section, option)
+
+AUCTIONS_COUNT = int(PARAMS['auctions_count'])
 
 
 class AuctionTest(TaskSet):
@@ -118,7 +130,7 @@ class AuctionTest(TaskSet):
 
 
 class AuctionAnonymous(HttpLocust):
-    host = "${options['host']}"
+    host = PARAMS['host']
     min_wait = 0
     max_wait = 0
     task_set = AuctionTest

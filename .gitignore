@@ -94,4 +94,5 @@ playbook.retry
 
 # buildout.cfg
 bin/
+etc/
 # circus.ini
