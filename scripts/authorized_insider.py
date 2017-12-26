@@ -28,12 +28,7 @@ for option in config.options(section):
     PARAMS[option] = config.get(section, option)
 
 AUCTIONS_COUNT = int(PARAMS['auctions_count'])
-
-BIDDERS = [
-    "e4456d02263441ffb3f00ceafa661bb2",
-    "a96a4681a1ef4b9fba6b598bd1d39406",
-    "c26d9eed99624c338ce0fca58a0aac32"
-]
+BIDDERS = [r.strip() for r in PARAMS['bidders'].split() if r.strip()]
 SIGNATURE_KEY = PARAMS['signature_key']
 
 

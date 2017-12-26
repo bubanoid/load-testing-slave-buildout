@@ -14,7 +14,8 @@ locustfiles =
 [authorized_insider.py]
 auctions_count = 10
 host = http://192.168.6.1:8090
-BIDDERS =
+signature_key = fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1
+bidders =
   93b5e1de62734362b09abfead33a7c60
   b663ca42ff3d4289a0251a1cb42ff818
   96f24413a30f4d1293648a20dda3bfbf
@@ -29,4 +30,3 @@ BIDDERS =
 [anonymous_insider.py]
 auctions_count = 10
 host = http://192.168.6.1:8090
-signature_key = fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1
