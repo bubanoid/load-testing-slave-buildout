@@ -124,8 +124,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.load_all_js()
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
-                self.get_current_time()
                 self.changes()
+                self.get_current_time()
                 long_pool = spawn(self.changes_multiple)
                 self.read_event_source(self.saved_cookies)
                 joinall([long_pool])
@@ -204,7 +204,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.post_bid()
             elif current_phase == u'bestbid':
                 self.post_bid()
-
 
     def get_current_time(self):
         self.client.get(
