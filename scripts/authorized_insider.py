@@ -16,7 +16,9 @@ from urllib import quote
 import os, io
 from configparser import RawConfigParser
 
-with open('../etc/locust.cfg', 'r') as f:
+PWD = os.path.dirname(os.path.realpath(__file__))
+
+with open(PWD + '/../etc/locust.cfg', 'r') as f:
     sample_config = f.read()
 config = RawConfigParser(allow_no_value=True)
 config.read_file(io.BytesIO(sample_config))
