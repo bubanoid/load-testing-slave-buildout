@@ -12,7 +12,6 @@ locustfiles =
   anonymous_insider.py
 
 [auctions_info]
-auction_type = insider
 auctions_number = 10000
 auctions_host = http://192.168.6.1:8090
 

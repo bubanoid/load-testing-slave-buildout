@@ -80,6 +80,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     @task(1)
     def main_task(self):
         self.last_change = 0
+        # TODO: tender_id_base
+        # auction_id_template = tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
         self.auction_id = "111111111111111111111111111{0:05d}".format(
             random.randint(0, AUCTIONS_COUNT - 1))
         self.generate_auth_params()
