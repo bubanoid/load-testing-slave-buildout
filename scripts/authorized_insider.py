@@ -15,6 +15,7 @@ from libnacl.sign import Signer
 from urllib import quote
 import os, io
 from configparser import RawConfigParser
+from math import ceil, log10
 
 PWD = os.path.dirname(os.path.realpath(__file__))
 
@@ -32,6 +33,10 @@ for option in config.options(section):
 AUCTIONS_COUNT = int(PARAMS['auctions_count'])
 BIDDERS = [r.strip() for r in PARAMS['bidders'].split() if r.strip()]
 SIGNATURE_KEY = PARAMS['signature_key']
+tender_id_base = PARAMS['tender_id_base']
+positions = int(ceil(log10(AUCTIONS_COUNT)))
+auction_id_template = \
+    tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
 
 
 class AuctionInsiderAuthorizedTest(TaskSet):
@@ -82,10 +87,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     @task(1)
     def main_task(self):
         self.last_change = 0
-        # TODO: tender_id_base
-        # auction_id_template = tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
-        self.auction_id = "111111111111111111111111111{0:05d}".format(
-            random.randint(0, AUCTIONS_COUNT - 1))
+        self.auction_id = \
+            auction_id_template.format(random.randint(0, AUCTIONS_COUNT - 1))
         self.generate_auth_params()
         params = {
             "bidder_id": self.bidder_id,
