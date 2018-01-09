@@ -17,7 +17,7 @@ auctions_host = http://192.168.6.1:8090
 tender_id_base = 3
 
 [authorized_insider.py]
-auctions_count = ${auctions_info:auctions_number}
+auctions_number = ${auctions_info:auctions_number}
 host = ${auctions_info:auctions_host}
 tender_id_base = ${auctions_info:tender_id_base}
 signature_key = fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1
@@ -34,5 +34,5 @@ bidders =
   a210879588314be6a5e7eba22fc5b704
 
 [anonymous_insider.py]
-auctions_count = ${auctions_info:auctions_number}
+auctions_number = ${auctions_info:auctions_number}
 host = ${auctions_info:auctions_host}

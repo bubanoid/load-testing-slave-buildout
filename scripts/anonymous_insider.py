@@ -23,7 +23,7 @@ PARAMS = {}
 for option in config.options(section):
     PARAMS[option] = config.get(section, option)
 
-AUCTIONS_COUNT = int(PARAMS['auctions_count'])
+AUCTIONS_NUMBER = int(PARAMS['auctions_number'])
 
 
 class AuctionTest(TaskSet):

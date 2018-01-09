@@ -30,11 +30,11 @@ PARAMS = {}
 for option in config.options(section):
     PARAMS[option] = config.get(section, option)
 
-AUCTIONS_COUNT = int(PARAMS['auctions_count'])
+AUCTIONS_NUMBER = int(PARAMS['auctions_number'])
 BIDDERS = [r.strip() for r in PARAMS['bidders'].split() if r.strip()]
 SIGNATURE_KEY = PARAMS['signature_key']
 tender_id_base = PARAMS['tender_id_base']
-positions = int(ceil(log10(AUCTIONS_COUNT)))
+positions = int(ceil(log10(AUCTIONS_NUMBER)))
 auction_id_template = \
     tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
 
@@ -88,7 +88,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     def main_task(self):
         self.last_change = 0
         self.auction_id = \
-            auction_id_template.format(random.randint(0, AUCTIONS_COUNT - 1))
+            auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
         self.generate_auth_params()
         params = {
             "bidder_id": self.bidder_id,
