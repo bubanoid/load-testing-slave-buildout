@@ -21,6 +21,7 @@ auctions_number = ${auctions_info:auctions_number}
 host = ${auctions_info:auctions_host}
 tender_id_base = ${auctions_info:tender_id_base}
 signature_key = fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1
+stages = 10
 bidders =
   93b5e1de62734362b09abfead33a7c60
   b663ca42ff3d4289a0251a1cb42ff818

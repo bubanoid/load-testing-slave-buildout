@@ -37,6 +37,7 @@ tender_id_base = PARAMS['tender_id_base']
 positions = int(ceil(log10(AUCTIONS_NUMBER)))
 auction_id_template = \
     tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
+stages = int(PARAMS['stages'])
 
 
 class AuctionInsiderAuthorizedTest(TaskSet):
@@ -205,7 +206,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             self.changes()
             current_phase = self.auction_doc['current_phase']
             if current_phase == u'dutch' and \
-                    self.auction_doc['current_stage'] == 40:
+                    self.auction_doc['current_stage'] == stages/2:
                 self.post_bid()
             elif current_phase == u'sealedbid':
                 self.post_bid()
