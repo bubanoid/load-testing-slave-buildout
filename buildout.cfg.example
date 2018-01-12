@@ -3,9 +3,9 @@ extends = profiles/base.cfg
           profiles/project.cfg
 
 [circus.ini]
-slaves_count = 2
+slave-numprocesses = 2
 master-bind-host = "*"
-master-host = 192.168.6.31
+master-host = 192.168.50.7
 master =
 slave = True
 locustfiles =
