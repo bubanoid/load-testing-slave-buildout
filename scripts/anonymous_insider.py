@@ -10,14 +10,14 @@ from pyquery import PyQuery
 import os, io
 from configparser import RawConfigParser
 
-PWD = os.path.dirname(os.path.realpath(__file__))
+PWD = os.path.dirname(os.path.realpath(__file__.rstrip('cd')))
 
 with open(PWD + '/../etc/locust.cfg', 'r') as f:
     sample_config = f.read()
 config = RawConfigParser(allow_no_value=True)
 config.read_file(io.BytesIO(sample_config))
 
-section = os.path.basename(__file__)
+section = os.path.basename(__file__.rstrip('cd'))
 PARAMS = {}
 
 for option in config.options(section):
