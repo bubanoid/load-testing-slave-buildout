@@ -14,7 +14,7 @@ locustfiles =
 
 [auctions_info]
 auctions_number = 10000
-auctions_host = http://192.168.6.1:8090
+auctions_host = http://192.168.4.167:8090
 tender_id_base = 3
 master_web_port = 40000
 stages = 10

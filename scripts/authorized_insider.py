@@ -143,10 +143,10 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     def get_auction_page(self):
         resp = self.client.get('/insider-auctions/{}'.format(self.auction_id),
                                name='Get auction page')
-        self.auction_page_src = resp.content
+        self.auction_src = resp.content
 
     def load_all_css(self):
-        pq = PyQuery(self.auction_page_src)
+        pq = PyQuery(self.auction_src)
         for style in pq('link[rel="stylesheet"]'):
             href = style.get('href')
             if href and href.startswith('/') and not href.startswith('//'):
