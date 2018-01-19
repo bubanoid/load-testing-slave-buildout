@@ -69,14 +69,14 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 if 'dutch_winner' in result:
                     self.dutch_winner = result['bidder_id']
                     self.dutch_winner_amount = result['amount']
-            params['bidder_id'] = self.bidder_id
-            params['bid'] = random.randint(self.dutch_winner_amount,
-                                           inital_value - 1)
+            if self.bidder_id != self.dutch_winner:
+                params['bidder_id'] = self.bidder_id
+                params['bid'] = random.randint(self.dutch_winner_amount,
+                                               inital_value - 2)
         elif current_phase == 'bestbid' and \
                         self.bidder_id == self.dutch_winner:
             params['bidder_id'] = self.bidder_id
-            params['bid'] = random.randint(self.dutch_winner_amount,
-                                           inital_value - 1)
+            params['bid'] = int(inital_value - 1)
         if params:
             self.client.post(
                 '/insider-auctions/{}/postbid'.format(self.auction_id),
@@ -195,10 +195,12 @@ class AuctionInsiderAuthorizedTest(TaskSet):
         except:
             pass
         total_time = int((time() - start_time) * 1000)
-        events.request_success.fire(request_type="GET",
-                                    name="Get event_source stream (Finish read)",
-                                    response_time=total_time,
-                                    response_length=response_length)
+        events.request_success.fire(
+            request_type="GET",
+            name="Get event_source stream (Finish read)",
+            response_time=total_time,
+            response_length=response_length
+        )
         sleep(10)
 
     def changes_multiple(self):
@@ -212,6 +214,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.post_bid()
             elif current_phase == u'bestbid':
                 self.post_bid()
+
+            sleep(1)
 
     def get_current_time(self):
         self.client.get(
