@@ -16,6 +16,8 @@ from urllib import quote
 import os, io
 from configparser import RawConfigParser
 from math import ceil, log10
+from iso8601 import parse_date
+from datetime import timedelta
 
 PWD = os.path.dirname(os.path.realpath(__file__.rstrip('cd')))
 
@@ -47,43 +49,27 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     saved_cookies = None
     last_change = 0
     csses = []
-    dutch_winner = ""
+    dutch_winner = ''
     dutch_winner_amount = 0
+    auction_doc = {}
+    current_phase = None
+    inital_value = 0
+    pre_bestbid_time = '2000-01-01T00:00:00.000000+02:00'
+    announcement_time = '2000-01-01T00:00:00.000000+02:00'
+    current_time = '2000-01-01T00:00:00.000000+02:00'
 
     def generate_auth_params(self):
         self.bidder_id = BIDDERS[random.randint(0, len(BIDDERS) - 1)]
         msg = '{}_{}'.format(self.auction_id, self.bidder_id)
         self.signature = quote(b64encode(self.signer.signature(str(msg))))
 
-    def post_bid(self):
-        current_phase = self.auction_doc['current_phase']
-        inital_value = self.auction_doc['initial_value']
-        params = {}
-        if current_phase == 'dutch' and len(self.auction_doc['results']) == 0:
-            stage = \
-                self.auction_doc['stages'][self.auction_doc['current_stage']]
-            params['bidder_id'] = self.bidder_id
-            params['bid'] = stage['amount']
-        elif current_phase == 'sealedbid':
-            for result in self.auction_doc['results']:
-                if 'dutch_winner' in result:
-                    self.dutch_winner = result['bidder_id']
-                    self.dutch_winner_amount = result['amount']
-            if self.bidder_id != self.dutch_winner:
-                params['bidder_id'] = self.bidder_id
-                params['bid'] = random.randint(self.dutch_winner_amount,
-                                               inital_value - 2)
-        elif current_phase == 'bestbid' and \
-                        self.bidder_id == self.dutch_winner:
-            params['bidder_id'] = self.bidder_id
-            params['bid'] = int(inital_value - 1)
-        if params:
-            self.client.post(
-                '/insider-auctions/{}/postbid'.format(self.auction_id),
-                data=json.dumps(params),
-                headers={'Content-Type': 'application/json'},
-                name='Place bid to auction {}'.format(self.auction_id)
-            )
+    def post_bid(self, params):
+        self.client.post(
+            '/insider-auctions/{}/postbid'.format(self.auction_id),
+            data=json.dumps(params),
+            headers={'Content-Type': 'application/json'},
+            name='Place bid to auction {}'.format(self.auction_id)
+        )
 
     @task(1)
     def main_task(self):
@@ -132,9 +118,19 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.load_all_js()
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
-                self.changes()
-                self.get_current_time()
+                ind = 0
+                while not self.auction_doc or ind < 100:
+                    sleep(1)
+                    self.changes()
+                    ind += 1
+                if not self.auction_doc:
+                    raise Exception('auction_doc is empty')
+                self.get_auction_values()
                 long_pool = spawn(self.changes_multiple)
+
+                # TODO: isn't it worth to place the self.read_event_source
+                # TODO: function under the gevent spawn function
+                # TODO: and do joinall([long_pool, self.read_event_source]???
                 self.read_event_source(self.saved_cookies)
                 joinall([long_pool])
         else:
@@ -205,25 +201,47 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
     def changes_multiple(self):
         while self.auction_doc['current_phase'] != u'announcement':
+            params = {}
             self.changes()
-            current_phase = self.auction_doc['current_phase']
-            if current_phase == u'dutch' and \
-                    self.auction_doc['current_stage'] == stages/2:
-                self.post_bid()
-            elif current_phase == u'sealedbid':
-                self.post_bid()
-            elif current_phase == u'bestbid':
-                self.post_bid()
+            self.get_current_time()
+
+            if self.current_phase == u'dutch' and \
+                    self.auction_doc['current_stage'] >= stages/2 and \
+                    len(self.auction_doc['results']) == 0:
+
+                stage = self.auction_doc['stages'][
+                    self.auction_doc['current_stage']]
+                params['bidder_id'] = self.bidder_id
+                params['bid'] = stage['amount']
+
+            elif self.current_phase == u'sealedbid' and \
+                    self.bidder_id != self.dutch_winner and \
+                    self.before_time(self.current_time, self.pre_bestbid_time):
+
+                params['bidder_id'] = self.bidder_id
+                params['bid'] = random.randint(self.dutch_winner_amount,
+                                               self.inital_value - 2)
+
+            elif self.current_phase == u'bestbid' and \
+                    self.bidder_id == self.dutch_winner and \
+                    self.before_time(self.current_time,
+                                     self.announcement_time):
+                params['bidder_id'] = self.bidder_id
+                params['bid'] = int(self.inital_value - 1)
+
+            if params:
+                self.post_bid(params)
 
             sleep(1)
 
     def get_current_time(self):
-        self.client.get(
+        resp = self.client.get(
             '/get_current_server_time?_nonce={0}'.format(random.random()),
             name="Get current server time")
+        if resp.status_code == 200:
+            self.current_time = resp.content
 
     def changes(self):
-        self.get_current_time()
         params = {
             'timeout': 25000,
             'style': 'main_only',
@@ -246,7 +264,33 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             doc = json.loads(resp.content)
             if len(doc['results']) > 0:
                 self.auction_doc = doc['results'][-1]['doc']
+
+                self.current_phase = self.auction_doc['current_phase']
+
+                if not self.dutch_winner:
+                    for result in self.auction_doc['results']:
+                        if 'dutch_winner' in result:
+                            self.dutch_winner = result['bidder_id']
+                            self.dutch_winner_amount = result['amount']
+
             self.last_change = doc['last_seq']
+
+    def get_auction_values(self):
+        self.inital_value = self.auction_doc['initial_value']
+
+        for stage in self.auction_doc['stages']:
+            if stage['type'] == 'pre-bestbid':
+                self.pre_bestbid_time = stage['start']
+
+            if stage['type'] == 'announcement':
+                self.announcement_time = stage['start']
+
+    @staticmethod
+    def before_time(time1, time2):
+        time_1 = parse_date(time1)
+        time_2 = parse_date(time2)
+        return time_1 < time_2 - timedelta(seconds=1)
+
 
 
 class AuctionAuthorized(HttpLocust):
