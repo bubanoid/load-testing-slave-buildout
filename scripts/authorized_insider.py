@@ -39,7 +39,7 @@ tender_id_base = PARAMS['tender_id_base']
 positions = int(ceil(log10(AUCTIONS_NUMBER)))
 auction_id_template = \
     tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
-stages = int(PARAMS['stages'])
+dutch_steps = int(PARAMS['dutch_steps'])
 
 
 class AuctionInsiderAuthorizedTest(TaskSet):
@@ -206,7 +206,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             self.get_current_time()
 
             if self.current_phase == u'dutch' and \
-                    self.auction_doc['current_stage'] >= stages/2 and \
+                    self.auction_doc['current_stage'] >= dutch_steps/2 and \
                     len(self.auction_doc['results']) == 0:
 
                 stage = self.auction_doc['stages'][
