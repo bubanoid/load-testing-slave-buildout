@@ -119,7 +119,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
                 ind = 0
-                while not self.auction_doc or ind < 100:
+                while not self.auction_doc and ind < 100:
                     sleep(1)
                     self.changes()
                     ind += 1
@@ -290,7 +290,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
         time_1 = parse_date(time1)
         time_2 = parse_date(time2)
         return time_1 < time_2 - timedelta(seconds=1)
-
 
 
 class AuctionAuthorized(HttpLocust):
