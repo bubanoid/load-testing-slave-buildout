@@ -127,10 +127,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                     raise Exception('auction_doc is empty')
                 self.get_auction_values()
                 long_pool = spawn(self.changes_multiple)
-
-                # TODO: isn't it worth to place the self.read_event_source
-                # TODO: function under the gevent spawn function
-                # TODO: and do joinall([long_pool, self.read_event_source]???
                 self.read_event_source(self.saved_cookies)
                 joinall([long_pool])
         else:
