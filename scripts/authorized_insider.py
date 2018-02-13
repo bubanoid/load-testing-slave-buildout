@@ -228,7 +228,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             if params:
                 self.post_bid(params)
 
-            sleep(1)
+            sleep(2)
 
     def get_current_time(self):
         resp = self.client.get(
