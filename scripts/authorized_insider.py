@@ -205,17 +205,17 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 params['bid'] = stage['amount']
 
             elif self.current_phase == u'sealedbid' and \
-                    self.bidder_id != self.dutch_winner and \
-                    self.before_time(self.current_time, self.pre_bestbid_time):
+                    self.bidder_id != self.dutch_winner:  # and \
+                    # self.before_time(self.current_time, self.pre_bestbid_time):
 
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = random.randint(self.dutch_winner_amount,
                                                self.inital_value - 2)
 
             elif self.current_phase == u'bestbid' and \
-                    self.bidder_id == self.dutch_winner and \
-                    self.before_time(self.current_time,
-                                     self.announcement_time):
+                    self.bidder_id == self.dutch_winner:  # and \
+                    # self.before_time(self.current_time,
+                    #                  self.announcement_time):
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = int(self.inital_value - 1)
 
