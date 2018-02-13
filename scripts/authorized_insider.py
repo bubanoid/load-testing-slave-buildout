@@ -52,6 +52,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     dutch_winner = ''
     dutch_winner_amount = 0
     auction_doc = {}
+    ind = False
     current_phase = None
     inital_value = 0
     pre_bestbid_time = '2000-01-01T00:00:00.000000+02:00'
@@ -118,14 +119,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.load_all_js()
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
-                ind = 0
-                while not self.auction_doc and ind < 100:
-                    sleep(1)
-                    self.changes()
-                    ind += 1
-                if not self.auction_doc:
-                    raise Exception('auction_doc is empty')
-                self.get_auction_values()
+                self.changes()
                 long_pool = spawn(self.changes_multiple)
                 self.read_event_source(self.saved_cookies)
                 joinall([long_pool])
@@ -260,6 +254,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             doc = json.loads(resp.content)
             if len(doc['results']) > 0:
                 self.auction_doc = doc['results'][-1]['doc']
+                self.get_auction_values()
 
                 self.current_phase = self.auction_doc['current_phase']
 
@@ -272,14 +267,16 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             self.last_change = doc['last_seq']
 
     def get_auction_values(self):
-        self.inital_value = self.auction_doc['initial_value']
+        if not self.ind:
+            self.ind = True
+            self.inital_value = self.auction_doc['initial_value']
 
-        for stage in self.auction_doc['stages']:
-            if stage['type'] == 'pre-bestbid':
-                self.pre_bestbid_time = stage['start']
+            for stage in self.auction_doc['stages']:
+                if stage['type'] == 'pre-bestbid':
+                    self.pre_bestbid_time = stage['start']
 
-            if stage['type'] == 'announcement':
-                self.announcement_time = stage['start']
+                if stage['type'] == 'announcement':
+                    self.announcement_time = stage['start']
 
     @staticmethod
     def before_time(time1, time2):
