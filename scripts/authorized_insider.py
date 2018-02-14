@@ -15,7 +15,6 @@ from libnacl.sign import Signer
 from urllib import quote
 import os, io
 from configparser import RawConfigParser
-from math import ceil, log10
 from iso8601 import parse_date
 from datetime import timedelta
 
@@ -36,7 +35,7 @@ AUCTIONS_NUMBER = int(PARAMS['auctions_number'])
 BIDDERS = [r.strip() for r in PARAMS['bidders'].split() if r.strip()]
 SIGNATURE_KEY = PARAMS['signature_key']
 tender_id_base = PARAMS['tender_id_base']
-positions = int(ceil(log10(AUCTIONS_NUMBER)))
+positions = 4
 auction_id_template = \
     tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
 dutch_steps = int(PARAMS['dutch_steps'])
