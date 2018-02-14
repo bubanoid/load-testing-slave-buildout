@@ -3,8 +3,6 @@ urllib3.contrib.pyopenssl.inject_into_urllib3()
 import random
 import json
 import tinycss2
-from datetime import datetime
-from time import mktime
 from locust import HttpLocust, TaskSet, task
 from pyquery import PyQuery
 import os, io
@@ -23,7 +21,11 @@ PARAMS = {}
 for option in config.options(section):
     PARAMS[option] = config.get(section, option)
 
+tender_id_base = PARAMS['tender_id_base']
 AUCTIONS_NUMBER = int(PARAMS['auctions_number'])
+positions = 4
+auction_id_template = \
+    tender_id_base * (32 - positions) + '{{0:0{}d}}'.format(positions)
 
 
 class AuctionTest(TaskSet):
@@ -31,20 +33,6 @@ class AuctionTest(TaskSet):
     auction_src = None
     last_change = 0
     csses = []
-
-    def index(self):
-        today = mktime(datetime.now().date().timetuple()) * 1000
-        resp = self.client.get("/")
-        if resp.status_code == 200:
-            pq = PyQuery(resp.content)
-            links = pq('.list-group-item a')
-            if links:
-                resp = self.client.get(
-                    "/database/_design/auctions/_view/by_endDate?"
-                    "include_docs=true&startkey={0}".format(int(today)))
-                rows = resp.json().get('rows', [])
-                if rows:
-                    self.auction_id = random.choice(rows).get('id')
 
     def auction_event_source(self):
         path = '/insider-auctions/{}/event_source?_nonce={}'.format(
@@ -60,18 +48,18 @@ class AuctionTest(TaskSet):
 
     @task(1)
     def reload_last_auction(self):
-        self.index()
-        if self.auction_id:
-            self.auction()
-            self.css()
-            self.js()
-            self.auctions()
-            self.auctions_db()
-            self.time()
+        self.auction_id = \
+            auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
+        self.auction()
+        self.css()
+        self.js()
+        self.auctions()
+        self.auctions_db()
+        self.time()
+        self.changes()
+        self.time()
+        for i in range(random.randint(1, 5)):
             self.changes()
-            self.time()
-            for i in range(random.randint(1, 5)):
-                self.changes()
 
     def css(self):
         pq = PyQuery(self.auction_src)
