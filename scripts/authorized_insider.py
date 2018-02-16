@@ -196,7 +196,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
             if self.current_phase == u'dutch' and \
                     self.auction_doc['current_stage'] >= dutch_steps/2 and \
-                    len(self.auction_doc['results']) == 0 and \
                     not self.dutch_winner:
 
                 stage = self.auction_doc['stages'][
