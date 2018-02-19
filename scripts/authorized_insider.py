@@ -118,9 +118,11 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.load_all_js()
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
-                self.read_event_source(self.saved_cookies)
                 long_pool = spawn(self.changes_multiple)
+                self.read_event_source(self.saved_cookies)
                 joinall([long_pool])
+            else:
+                raise Exception('Client can not click yes on EULA')
         else:
             sleep(10)
 
