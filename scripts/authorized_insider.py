@@ -118,9 +118,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.load_all_js()
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
-                self.changes()
-                long_pool = spawn(self.changes_multiple)
                 self.read_event_source(self.saved_cookies)
+                long_pool = spawn(self.changes_multiple)
                 joinall([long_pool])
         else:
             sleep(10)
@@ -186,10 +185,10 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             response_time=total_time,
             response_length=response_length
         )
-        sleep(10)
+        sleep(3)
 
     def changes_multiple(self):
-        while self.auction_doc['current_phase'] != u'announcement':
+        while self.current_phase != u'announcement':
             params = {}
             self.changes()
             self.get_current_time()
@@ -220,8 +219,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
             if params:
                 self.post_bid(params)
-
-            sleep(2)
 
     def get_current_time(self):
         resp = self.client.get(
