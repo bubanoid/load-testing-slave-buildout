@@ -94,7 +94,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             response = self.client.get(response.headers['Location'],
                                        name="Get EULA page")
             if not response.ok:
-                return
+                raise Exception('Client can not get EULA page')
 
             redirect_url = urlparse(response.request.url)
             query = parse_qs(redirect_url.query)
