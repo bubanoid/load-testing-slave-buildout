@@ -68,7 +68,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             '/insider-auctions/{}/postbid'.format(self.auction_id),
             data=json.dumps(params),
             headers={'Content-Type': 'application/json'},
-            name='Place bid to auction {}'.format(self.auction_id)
+            name='Place bid to auction. Phase: {}, id: {}'.
+                format(self.current_phase, self.auction_id)
         )
 
     @task(1)
