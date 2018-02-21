@@ -193,8 +193,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     def changes_multiple(self):
         while self.current_phase != u'announcement':
             params = {}
-            self.changes()
             self.get_current_server_time()
+            self.changes()
 
             if self.current_phase == u'dutch' and \
                     self.auction_doc['current_stage'] >= dutch_steps/2 and \
