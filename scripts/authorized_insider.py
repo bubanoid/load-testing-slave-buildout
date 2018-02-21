@@ -119,9 +119,10 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.load_all_js()
                 self.get_auction_doc_from_couchdb()
                 self.get_auctions_db_info()
+                ch = spawn(self.changes)
                 long_pool = spawn(self.changes_multiple)
                 self.read_event_source(self.saved_cookies)
-                joinall([long_pool])
+                joinall([ch, long_pool])
             else:
                 raise Exception('Client can not click yes on EULA')
         else:
@@ -193,8 +194,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     def changes_multiple(self):
         while self.current_phase != u'announcement':
             params = {}
-            self.changes()
-            self.get_current_time()
 
             if self.current_phase == u'dutch' and \
                     self.auction_doc['current_stage'] >= dutch_steps/2 and \
@@ -222,6 +221,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
             if params:
                 self.post_bid(params)
+            sleep(10)
 
     def get_current_time(self):
         resp = self.client.get(
@@ -231,39 +231,42 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             self.current_time = resp.content
 
     def changes(self):
-        params = {
-            'timeout': 25000,
-            'style': 'main_only',
-            'heartbeat': 10000,
-            'include_docs': 'true',
-            'feed': 'longpoll',
-            'filter': '_doc_ids',
-            'since': self.last_change,
-            'limit': 25,
-            '_nonce': random.random(),
-            'doc_ids': '["{0}"]'.format(self.auction_id)
-        }
-        if self.last_change == 0:
-            name = "Get first change from couch"
-        else:
-            name = "Get change from couch (longpoll)"
+        while self.current_phase != u'announcement':
+            self.get_current_time()
+            params = {
+                'timeout': 25000,
+                'style': 'main_only',
+                'heartbeat': 10000,
+                'include_docs': 'true',
+                'feed': 'longpoll',
+                'filter': '_doc_ids',
+                'since': self.last_change,
+                'limit': 25,
+                '_nonce': random.random(),
+                'doc_ids': '["{0}"]'.format(self.auction_id)
+            }
+            if self.last_change == 0:
+                name = "Get first change from couch"
+            else:
+                name = "Get change from couch (longpoll)"
 
-        resp = self.client.get('/database/_changes', params=params, name=name)
-        if resp.status_code == 200:
-            doc = json.loads(resp.content)
-            if len(doc['results']) > 0:
-                self.auction_doc = doc['results'][-1]['doc']
-                self.get_auction_values()
+            resp = self.client.get('/database/_changes', params=params,
+                                   name=name)
+            if resp.status_code == 200:
+                doc = json.loads(resp.content)
+                if len(doc['results']) > 0:
+                    self.auction_doc = doc['results'][-1]['doc']
+                    self.get_auction_values()
 
-                self.current_phase = self.auction_doc['current_phase']
+                    self.current_phase = self.auction_doc['current_phase']
 
-                if not self.dutch_winner:
-                    for result in self.auction_doc['results']:
-                        if 'dutch_winner' in result:
-                            self.dutch_winner = result['bidder_id']
-                            self.dutch_winner_amount = result['amount']
+                    if not self.dutch_winner:
+                        for result in self.auction_doc['results']:
+                            if 'dutch_winner' in result:
+                                self.dutch_winner = result['bidder_id']
+                                self.dutch_winner_amount = result['amount']
 
-            self.last_change = doc['last_seq']
+                self.last_change = doc['last_seq']
 
     def get_auction_values(self):
         if not self.ind:
