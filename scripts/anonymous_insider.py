@@ -55,9 +55,9 @@ class AuctionTest(TaskSet):
         self.js()
         self.auctions()
         self.auctions_db()
-        self.time()
+        self.get_current_server_time()
         self.changes()
-        self.time()
+        self.get_current_server_time()
         for i in range(random.randint(1, 5)):
             self.changes()
 
@@ -82,10 +82,10 @@ class AuctionTest(TaskSet):
             if src and src.startswith('/') and not src.startswith('//'):
                 self.client.get(src)
 
-    def time(self):
+    def get_current_server_time(self):
         self.client.get(
             '/get_current_server_time?_nonce={}'.format(
-                random.random()), name="get_current_server_time")
+                random.random()), name="Get current server time")
 
     def auctions_db(self):
         self.client.get('/database?_nonce={}'.format(random.random()),

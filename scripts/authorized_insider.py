@@ -194,7 +194,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
         while self.current_phase != u'announcement':
             params = {}
             self.changes()
-            self.get_current_time()
+            self.get_current_server_time()
 
             if self.current_phase == u'dutch' and \
                     self.auction_doc['current_stage'] >= dutch_steps/2 and \
@@ -223,7 +223,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             if params:
                 self.post_bid(params)
 
-    def get_current_time(self):
+    def get_current_server_time(self):
         resp = self.client.get(
             '/get_current_server_time?_nonce={0}'.format(random.random()),
             name="Get current server time")
