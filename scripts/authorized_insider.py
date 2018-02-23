@@ -18,6 +18,9 @@ from configparser import RawConfigParser
 from iso8601 import parse_date
 from datetime import timedelta
 from dateutil import parser
+# from gevent.lock import BoundedSemaphore
+
+# semaphore = BoundedSemaphore(1)
 
 PWD = os.path.dirname(os.path.realpath(__file__.rstrip('cd')))
 
@@ -208,8 +211,9 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     def changes_multiple(self):
         while self.current_phase != u'announcement':
             params = {}
-            self.get_current_server_time()
             self.changes()
+            # semaphore.acquire()
+            self.get_current_server_time()
 
             if self.current_phase == u'dutch' and \
                     self.auction_doc['current_stage'] >= dutch_steps/2 and \
@@ -238,6 +242,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
             if params:
                 self.post_bid(params)
+            # semaphore.release()
 
     def get_current_server_time(self):
         resp = self.client.get(
