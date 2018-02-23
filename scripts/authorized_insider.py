@@ -45,6 +45,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     signer = Signer(SIGNATURE_KEY.decode('hex'))
 
     auction_src = None
+    auction_id = None
     saved_cookies = None
     last_change = 0
     csses = []
@@ -74,58 +75,60 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
     @task(1)
     def main_task(self):
-        self.last_change = 0
         self.auction_id = \
             auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
-        self.generate_auth_params()
-        params = {
-            "bidder_id": self.bidder_id,
-            "signature": self.signature
-        }
-        response = self.client.get(
-            '/insider-auctions/{}/login'.format(self.auction_id),
-            params=params, name="Login to auction", allow_redirects=False,
-            catch_response=True
-        )
-        if response.ok and 'Location' in response.headers:
-            if response.headers['Location'].startswith(self.client.base_url):
-                sleep(10)
-                return
+        self.get_auction_doc_from_couchdb()
 
-            response = self.client.get(response.headers['Location'],
-                                       name="Get EULA page")
-            if not response.ok:
-                raise Exception('Client can not get EULA page')
-
-            redirect_url = urlparse(response.request.url)
-            query = parse_qs(redirect_url.query)
-
+        if self.current_phase != u'announcement':
+            self.generate_auth_params()
             params = {
-                "client_id": query['client_id'][0],
-                "scope": query['scope'][0],
-                "bidder_id": query['bidder_id'][0],
-                "response_type": query['response_type'][0],
-                "redirect_uri": query['redirect_uri'][0],
-                "confirm": "yes"
+                "bidder_id": self.bidder_id,
+                "signature": self.signature
             }
-            response = self.client.post(
-                '{0.scheme}://{0.netloc}{0.path}'.format(redirect_url),
-                data=params, name="Click yes on EULA"
+            response = self.client.get(
+                '/insider-auctions/{}/login'.format(self.auction_id),
+                params=params, name="Login to auction", allow_redirects=False,
+                catch_response=True
             )
-            if response.ok:
-                self.saved_cookies = copy.copy(self.client.cookies)
-                self.get_auction_page()
-                self.load_all_css()
-                self.load_all_js()
-                self.get_auction_doc_from_couchdb()
-                self.get_auctions_db_info()
-                long_pool = spawn(self.changes_multiple)
-                self.read_event_source(self.saved_cookies)
-                joinall([long_pool])
+            if response.ok and 'Location' in response.headers:
+                if response.headers['Location'].\
+                        startswith(self.client.base_url):
+                    sleep(10)
+                    return
+
+                response = self.client.get(response.headers['Location'],
+                                           name="Get EULA page")
+                if not response.ok:
+                    raise Exception('Client could not get EULA page')
+
+                redirect_url = urlparse(response.request.url)
+                query = parse_qs(redirect_url.query)
+
+                params = {
+                    "client_id": query['client_id'][0],
+                    "scope": query['scope'][0],
+                    "bidder_id": query['bidder_id'][0],
+                    "response_type": query['response_type'][0],
+                    "redirect_uri": query['redirect_uri'][0],
+                    "confirm": "yes"
+                }
+                response = self.client.post(
+                    '{0.scheme}://{0.netloc}{0.path}'.format(redirect_url),
+                    data=params, name="Click yes on EULA"
+                )
+                if response.ok:
+                    self.saved_cookies = copy.copy(self.client.cookies)
+                    self.get_auction_page()
+                    self.load_all_css()
+                    self.load_all_js()
+                    self.get_auctions_db_info()
+                    long_pool = spawn(self.changes_multiple)
+                    self.read_event_source(self.saved_cookies)
+                    joinall([long_pool])
+                else:
+                    raise Exception('Client could not click yes on EULA')
             else:
-                raise Exception('Client can not click yes on EULA')
-        else:
-            sleep(10)
+                sleep(10)
 
     def get_auction_page(self):
         resp = self.client.get('/insider-auctions/{}'.format(self.auction_id),
@@ -154,10 +157,21 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 self.client.get(src)
 
     def get_auction_doc_from_couchdb(self):
-        self.client.get(
+        resp = self.client.get(
             '/database/{0}?_nonce={0}'.format(self.auction_id,
                                               random.random()),
             name="Get document from couch")
+        doc = json.loads(resp.content)
+
+        self.current_phase = doc['current_phase']
+        self.inital_value = doc['initial_value']
+
+        for stage in doc['stages']:
+            if stage['type'] == 'pre-bestbid':
+                self.pre_bestbid_time = stage['start']
+
+            if stage['type'] == 'announcement':
+                self.announcement_time = stage['start']
 
     def get_auctions_db_info(self):
         self.client.get('/database?_nonce={0}'.format(random.random()),
@@ -253,8 +267,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             doc = json.loads(resp.content)
             if len(doc['results']) > 0:
                 self.auction_doc = doc['results'][-1]['doc']
-                self.get_auction_values()
-
                 self.current_phase = self.auction_doc['current_phase']
 
                 if not self.dutch_winner:
@@ -264,18 +276,6 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                             self.dutch_winner_amount = result['amount']
 
             self.last_change = doc['last_seq']
-
-    def get_auction_values(self):
-        if not self.ind:
-            self.ind = True
-            self.inital_value = self.auction_doc['initial_value']
-
-            for stage in self.auction_doc['stages']:
-                if stage['type'] == 'pre-bestbid':
-                    self.pre_bestbid_time = stage['start']
-
-                if stage['type'] == 'announcement':
-                    self.announcement_time = stage['start']
 
     @staticmethod
     def before_time(time1, time2):
