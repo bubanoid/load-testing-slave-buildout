@@ -17,6 +17,7 @@ import os, io
 from configparser import RawConfigParser
 from iso8601 import parse_date
 from datetime import timedelta
+from dateutil import parser
 
 PWD = os.path.dirname(os.path.realpath(__file__.rstrip('cd')))
 
@@ -220,17 +221,18 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                 params['bid'] = stage['amount']
 
             elif self.current_phase == u'sealedbid' and \
-                    self.bidder_id != self.dutch_winner:  # and \
-                    # self.before_time(self.current_time, self.pre_bestbid_time):
+                    self.bidder_id != self.dutch_winner and \
+                    self.before_time(self.current_time,
+                                     parse_date(self.pre_bestbid_time)):
 
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = random.randint(self.dutch_winner_amount,
                                                self.inital_value - 2)
 
             elif self.current_phase == u'bestbid' and \
-                    self.bidder_id == self.dutch_winner:  # and \
-                    # self.before_time(self.current_time,
-                    #                  self.announcement_time):
+                    self.bidder_id == self.dutch_winner and \
+                    self.before_time(self.current_time,
+                                     parse_date(self.announcement_time)):
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = int(self.inital_value - 1)
 
@@ -242,7 +244,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             '/get_current_server_time?_nonce={0}'.format(random.random()),
             name="Get current server time")
         if resp.status_code == 200:
-            self.current_time = resp.content
+            current_time_str = resp.headers['date']
+            self.current_time = parser.parse(current_time_str)
 
     def changes(self):
         params = {
@@ -279,9 +282,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
     @staticmethod
     def before_time(time1, time2):
-        time_1 = parse_date(time1)
-        time_2 = parse_date(time2)
-        return time_1 < time_2 - timedelta(seconds=1)
+        return time1 < time2 - timedelta(seconds=3)
 
 
 class AuctionAuthorized(HttpLocust):
