@@ -18,6 +18,7 @@ from configparser import RawConfigParser
 from iso8601 import parse_date
 from datetime import timedelta
 from dateutil import parser
+from math import trunc
 # from gevent.lock import BoundedSemaphore
 
 # semaphore = BoundedSemaphore(1)
@@ -231,7 +232,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = random.randint(self.dutch_winner_amount,
-                                               self.inital_value - 2)
+                                               self.inital_value/99 - 2)
 
             elif self.current_phase == u'bestbid' and \
                     self.bidder_id == self.dutch_winner and \
