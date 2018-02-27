@@ -18,6 +18,7 @@ auctions_host_url = http://192.168.4.167:8090
 tender_id_base = 3
 master_web_port = 40000
 signature_key = fe3b3b5999a08e68dfe62687c2ae147f62712ceace58c1ffca8ea819eabcb5d1
+dutch_steps = 10
 bidders =
   93b5e1de62734362b09abfead33a7c60
   b663ca42ff3d4289a0251a1cb42ff818
@@ -31,6 +32,5 @@ bidders =
   a210879588314be6a5e7eba22fc5b704
 
 [authorized_insider.py]
-dutch_steps = 10
 
 [anonymous_insider.py]
