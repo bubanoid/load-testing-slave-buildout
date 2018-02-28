@@ -232,7 +232,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = random.randint(self.dutch_winner_amount,
-                                               self.inital_value/99 - 2)
+                                               99*self.inital_value/100 - 2)
 
             elif self.current_phase == u'bestbid' and \
                     self.bidder_id == self.dutch_winner and \
