@@ -18,10 +18,7 @@ from configparser import RawConfigParser
 from iso8601 import parse_date
 from datetime import timedelta
 from dateutil import parser
-from math import trunc
-# from gevent.lock import BoundedSemaphore
 
-# semaphore = BoundedSemaphore(1)
 
 PWD = os.path.dirname(os.path.realpath(__file__.rstrip('cd')))
 
@@ -60,9 +57,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     ind = False
     current_phase = None
     inital_value = 0
-    pre_bestbid_time = '2000-01-01T00:00:00.000000+02:00'
-    announcement_time = '2000-01-01T00:00:00.000000+02:00'
     current_time = '2000-01-01T00:00:00.000000+02:00'
+    next_stage_start = '2000-01-01T00:00:00+02:00'
 
     def generate_auth_params(self):
         self.bidder_id = BIDDERS[random.randint(0, len(BIDDERS) - 1)]
@@ -171,12 +167,9 @@ class AuctionInsiderAuthorizedTest(TaskSet):
         self.current_phase = doc['current_phase']
         self.inital_value = doc['initial_value']
 
-        for stage in doc['stages']:
-            if stage['type'] == 'pre-bestbid':
-                self.pre_bestbid_time = stage['start']
-
-            if stage['type'] == 'announcement':
-                self.announcement_time = stage['start']
+        if len(doc['stages']) > int(doc['current_stage']) + 1:
+            self.next_stage_start = \
+                doc['stages'][doc['current_stage'] + 1]['start']
 
     def get_auctions_db_info(self):
         self.client.get('/database?_nonce={0}'.format(random.random()),
@@ -213,12 +206,13 @@ class AuctionInsiderAuthorizedTest(TaskSet):
         while self.current_phase != u'announcement':
             params = {}
             self.changes()
-            # semaphore.acquire()
             self.get_current_server_time()
 
             if self.current_phase == u'dutch' and \
                     self.auction_doc['current_stage'] >= dutch_steps/2 and \
-                    not self.dutch_winner:
+                    not self.dutch_winner and \
+                    self.before_time(self.current_time,
+                                     parse_date(self.next_stage_start)):
 
                 stage = self.auction_doc['stages'][
                     self.auction_doc['current_stage']]
@@ -228,7 +222,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             elif self.current_phase == u'sealedbid' and \
                     self.bidder_id != self.dutch_winner and \
                     self.before_time(self.current_time,
-                                     parse_date(self.pre_bestbid_time)):
+                                     parse_date(self.next_stage_start)):
 
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = random.randint(self.dutch_winner_amount,
@@ -237,13 +231,12 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             elif self.current_phase == u'bestbid' and \
                     self.bidder_id == self.dutch_winner and \
                     self.before_time(self.current_time,
-                                     parse_date(self.announcement_time)):
+                                     parse_date(self.next_stage_start)):
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = int(self.inital_value - 1)
 
             if params:
                 self.post_bid(params)
-            # semaphore.release()
 
     def get_current_server_time(self):
         resp = self.client.get(
