@@ -56,7 +56,8 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     auction_doc = {}
     ind = False
     current_phase = None
-    inital_value = 0
+    current_stage = None
+    initial_value = 0
     current_time = '2000-01-01T00:00:00.000000+02:00'
     next_stage_start = '2000-01-01T00:00:00+02:00'
 
@@ -80,7 +81,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
         self.get_auction_doc_from_couchdb()
 
-        if self.current_phase != u'announcement':
+        if self.current_phase != u'announcement':  # and self.current_stage >= 0:
             self.generate_auth_params()
             params = {
                 "bidder_id": self.bidder_id,
@@ -128,8 +129,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
                     joinall([long_pool])
                 else:
                     raise Exception('Client could not click yes on EULA')
-            else:
-                sleep(10)
+        sleep(10)
 
     def get_auction_page(self):
         resp = self.client.get('/insider-auctions/{}'.format(self.auction_id),
@@ -164,8 +164,9 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             name="Get document from couch")
         doc = json.loads(resp.content)
 
+        self.current_stage = doc['current_stage']
         self.current_phase = doc['current_phase']
-        self.inital_value = doc['initial_value']
+        self.initial_value = doc['initial_value']
 
         if len(doc['stages']) > int(doc['current_stage']) + 1:
             self.next_stage_start = \
@@ -226,14 +227,14 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
                 params['bidder_id'] = self.bidder_id
                 params['bid'] = random.randint(self.dutch_winner_amount,
-                                               99*self.inital_value/100 - 2)
+                                               99*self.initial_value/100 - 2)
 
             elif self.current_phase == u'bestbid' and \
                     self.bidder_id == self.dutch_winner and \
                     self.before_time(self.current_time,
                                      parse_date(self.next_stage_start)):
                 params['bidder_id'] = self.bidder_id
-                params['bid'] = int(self.inital_value - 1)
+                params['bid'] = int(self.initial_value - 1)
 
             if params:
                 self.post_bid(params)
@@ -270,6 +271,7 @@ class AuctionInsiderAuthorizedTest(TaskSet):
             if len(doc['results']) > 0:
                 self.auction_doc = doc['results'][-1]['doc']
                 self.current_phase = self.auction_doc['current_phase']
+                self.current_stage = self.auction_doc['current_stage']
 
                 if not self.dutch_winner:
                     for result in self.auction_doc['results']:
