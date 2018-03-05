@@ -61,10 +61,17 @@ class AuctionInsiderAuthorizedTest(TaskSet):
     current_time = '2000-01-01T00:00:00.000000+02:00'
     next_stage_start = '2000-01-01T00:00:00+02:00'
 
-    def generate_auth_params(self):
+    def __init__(self, parent):
+        self.auction_id = \
+            auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
         self.bidder_id = BIDDERS[random.randint(0, len(BIDDERS) - 1)]
         msg = '{}_{}'.format(self.auction_id, self.bidder_id)
         self.signature = quote(b64encode(self.signer.signature(str(msg))))
+        self.auth_params = {
+            "bidder_id": self.bidder_id,
+            "signature": self.signature
+        }
+        super(AuctionInsiderAuthorizedTest, self).__init__(parent)
 
     def post_bid(self, params):
         self.client.post(
@@ -77,20 +84,13 @@ class AuctionInsiderAuthorizedTest(TaskSet):
 
     @task(1)
     def main_task(self):
-        self.auction_id = \
-            auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
         self.get_auction_doc_from_couchdb()
 
         if self.current_phase != u'announcement':  # and self.current_stage >= 0:
-            self.generate_auth_params()
-            params = {
-                "bidder_id": self.bidder_id,
-                "signature": self.signature
-            }
             response = self.client.get(
                 '/insider-auctions/{}/login'.format(self.auction_id),
-                params=params, name="Login to auction", allow_redirects=False,
-                catch_response=True
+                params=self.auth_params, name="Login to auction",
+                allow_redirects=False, catch_response=True
             )
             if response.ok and 'Location' in response.headers:
                 if response.headers['Location'].\

@@ -34,6 +34,11 @@ class AuctionTest(TaskSet):
     last_change = 0
     csses = []
 
+    def __init__(self, parent):
+        self.auction_id = \
+            auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
+        super(AuctionTest, self).__init__(parent)
+
     def auction_event_source(self):
         path = '/insider-auctions/{}/event_source?_nonce={}'.format(
             self.auction_id, random.random())
@@ -48,8 +53,6 @@ class AuctionTest(TaskSet):
 
     @task(1)
     def reload_last_auction(self):
-        self.auction_id = \
-            auction_id_template.format(random.randint(0, AUCTIONS_NUMBER - 1))
         self.auction()
         self.css()
         self.js()
